@@ -78,6 +78,15 @@
     opacity: 0.7;
   }
 
+  .unit-ms {
+    min-width: clamp(70px, 15vw, 110px);
+  }
+
+  .unit-ms .value {
+    font-size: clamp(1.6rem, 6vw, 3.2rem);
+    opacity: 0.85;
+  }
+
   .finished {
     font-size: clamp(1.8rem, 5vw, 3rem);
     font-weight: 700;
@@ -113,6 +122,7 @@
     <div class="unit"><div class="value" id="hours">--</div><div class="label">Stunden</div></div>
     <div class="unit"><div class="value" id="minutes">--</div><div class="label">Minuten</div></div>
     <div class="unit"><div class="value" id="seconds">--</div><div class="label">Sekunden</div></div>
+    <div class="unit unit-ms"><div class="value" id="milliseconds">--</div><div class="label">Millisek.</div></div>
   </div>
 
   <div class="duck" id="duck">🦆</div>
@@ -124,10 +134,13 @@
   const hoursEl = document.getElementById('hours');
   const minutesEl = document.getElementById('minutes');
   const secondsEl = document.getElementById('seconds');
+  const millisecondsEl = document.getElementById('milliseconds');
 
-  function pad(n) {
-    return String(n).padStart(2, '0');
+  function pad(n, len = 2) {
+    return String(n).padStart(len, '0');
   }
+
+  let running = true;
 
   function update() {
     const now = new Date();
@@ -135,24 +148,28 @@
 
     if (diff <= 0) {
       countdownEl.innerHTML = '<div class="finished">🎉 Das Zieldatum ist erreicht! 🎉</div>';
-      clearInterval(timer);
+      running = false;
       return;
     }
 
-    const totalSeconds = Math.floor(diff / 1000);
+    const totalMilliseconds = Math.floor(diff);
+    const totalSeconds = Math.floor(totalMilliseconds / 1000);
     const days = Math.floor(totalSeconds / 86400);
     const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
+    const milliseconds = totalMilliseconds % 1000;
 
     daysEl.textContent = days;
     hoursEl.textContent = pad(hours);
     minutesEl.textContent = pad(minutes);
     secondsEl.textContent = pad(seconds);
+    millisecondsEl.textContent = pad(milliseconds, 3);
+
+    requestAnimationFrame(update);
   }
 
   update();
-  const timer = setInterval(update, 1000);
 
   // Die Ente wandert ab und zu quer über den Bildschirm
   const duck = document.getElementById('duck');
