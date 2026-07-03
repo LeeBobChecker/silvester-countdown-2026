@@ -216,7 +216,8 @@
   }
 
   function scheduleDuck() {
-    duckTimer = setTimeout(() => walkDuck(false), 4000);
+    const delay = Math.random() * 10000;
+    duckTimer = setTimeout(() => walkDuck(false), delay);
   }
 
   duck.addEventListener('click', () => walkDuck(true));
