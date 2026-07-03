@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23302b63'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%F0%9F%A6%86%3C/text%3E%3C/svg%3E">
+<title>Countdown bis 31.12.2026</title>
+<style>
+  :root {
+    --bg-1: #0f0c29;
+    --bg-2: #302b63;
+    --bg-3: #24243e;
+    --accent: #ffcc70;
+    --text: #f5f5f7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));
+    background-size: 400% 400%;
+    animation: gradientShift 18s ease infinite;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 20px;
+    overflow: hidden;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .countdown {
+    display: flex;
+    gap: clamp(10px, 3vw, 30px);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .unit {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: clamp(16px, 3vw, 30px) clamp(14px, 3vw, 26px);
+    min-width: clamp(80px, 18vw, 140px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .unit .value {
+    font-size: clamp(2.2rem, 8vw, 4.5rem);
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .unit .label {
+    margin-top: 10px;
+    font-size: clamp(0.7rem, 1.5vw, 0.95rem);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.7;
+  }
+
+  .finished {
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .duck {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    font-size: 2rem;
+    z-index: 10;
+    user-select: none;
+    pointer-events: none;
+    transition: transform 0.1s linear;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+  }
+
+  .duck.walking {
+    animation: waddle 0.3s ease-in-out infinite;
+  }
+
+  @keyframes waddle {
+    0%, 100% { transform: translateY(0) scaleX(var(--dir, 1)); }
+    50% { transform: translateY(-4px) scaleX(var(--dir, 1)); }
+  }
+</style>
+</head>
+<body>
+
+  <div id="countdown" class="countdown">
+    <div class="unit"><div class="value" id="days">--</div><div class="label">Tage</div></div>
+    <div class="unit"><div class="value" id="hours">--</div><div class="label">Stunden</div></div>
+    <div class="unit"><div class="value" id="minutes">--</div><div class="label">Minuten</div></div>
+    <div class="unit"><div class="value" id="seconds">--</div><div class="label">Sekunden</div></div>
+  </div>
+
+  <div class="duck" id="duck">🦆</div>
+
+<script>
+  const targetDate = new Date('2026-12-31T00:00:00');
+  const countdownEl = document.getElementById('countdown');
+  const daysEl = document.getElementById('days');
+  const hoursEl = document.getElementById('hours');
+  const minutesEl = document.getElementById('minutes');
+  const secondsEl = document.getElementById('seconds');
+
+  function pad(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function update() {
+    const now = new Date();
+    const diff = targetDate - now;
+
+    if (diff <= 0) {
+      countdownEl.innerHTML = '<div class="finished">🎉 Das Zieldatum ist erreicht! 🎉</div>';
+      clearInterval(timer);
+      return;
+    }
+
+    const totalSeconds = Math.floor(diff / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    daysEl.textContent = days;
+    hoursEl.textContent = pad(hours);
+    minutesEl.textContent = pad(minutes);
+    secondsEl.textContent = pad(seconds);
+  }
+
+  update();
+  const timer = setInterval(update, 1000);
+
+  // Die Ente wandert ab und zu quer über den Bildschirm
+  const duck = document.getElementById('duck');
+
+  function randomEdgeY() {
+    return Math.random() * (window.innerHeight - 60);
+  }
+
+  function walkDuck() {
+    const goingRight = Math.random() > 0.5;
+    const startX = goingRight ? -60 : window.innerWidth + 60;
+    const endX = goingRight ? window.innerWidth + 60 : -60;
+    const y = randomEdgeY();
+    const duration = 6000 + Math.random() * 6000;
+
+    duck.style.setProperty('--dir', goingRight ? 1 : -1);
+    duck.style.bottom = y + 'px';
+    duck.style.transition = 'none';
+    duck.style.left = startX + 'px';
+    duck.classList.add('walking');
+
+    // im nächsten Frame die eigentliche Bewegung starten, damit die Transition greift
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        duck.style.transition = `left ${duration}ms linear`;
+        duck.style.left = endX + 'px';
+      });
+    });
+
+    setTimeout(() => {
+      duck.classList.remove('walking');
+      scheduleDuck();
+    }, duration);
+  }
+
+  function scheduleDuck() {
+    const delay = 8000 + Math.random() * 20000;
+    setTimeout(walkDuck, delay);
+  }
+
+  scheduleDuck();
+</script>
+
+</body>
+</html>
