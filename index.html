@@ -100,13 +100,17 @@
     font-size: 2rem;
     z-index: 10;
     user-select: none;
-    pointer-events: none;
+    cursor: pointer;
     transition: transform 0.1s linear;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
   }
 
   .duck.walking {
     animation: waddle 0.3s ease-in-out infinite;
+  }
+
+  .duck.running {
+    animation: waddle 0.12s ease-in-out infinite;
   }
 
   @keyframes waddle {
@@ -178,18 +182,24 @@
     return Math.random() * (window.innerHeight - 60);
   }
 
-  function walkDuck() {
+  let duckTimer = null;
+
+  function walkDuck(fast = false) {
+    clearTimeout(duckTimer);
+    const wasWalking = duck.classList.contains('walking');
     const goingRight = Math.random() > 0.5;
-    const startX = goingRight ? -60 : window.innerWidth + 60;
+    const startX = (fast && wasWalking) ? duck.getBoundingClientRect().left : (goingRight ? -60 : window.innerWidth + 60);
     const endX = goingRight ? window.innerWidth + 60 : -60;
-    const y = randomEdgeY();
-    const duration = 6000 + Math.random() * 6000;
+    const duration = fast ? (1000 + Math.random() * 800) : (6000 + Math.random() * 6000);
 
     duck.style.setProperty('--dir', goingRight ? 1 : -1);
-    duck.style.bottom = y + 'px';
+    if (!fast || !wasWalking) {
+      duck.style.bottom = randomEdgeY() + 'px';
+    }
     duck.style.transition = 'none';
     duck.style.left = startX + 'px';
     duck.classList.add('walking');
+    duck.classList.toggle('running', fast);
 
     // im nächsten Frame die eigentliche Bewegung starten, damit die Transition greift
     requestAnimationFrame(() => {
@@ -199,16 +209,18 @@
       });
     });
 
-    setTimeout(() => {
-      duck.classList.remove('walking');
+    duckTimer = setTimeout(() => {
+      duck.classList.remove('walking', 'running');
       scheduleDuck();
     }, duration);
   }
 
   function scheduleDuck() {
     const delay = 8000 + Math.random() * 20000;
-    setTimeout(walkDuck, delay);
+    duckTimer = setTimeout(() => walkDuck(false), delay);
   }
+
+  duck.addEventListener('click', () => walkDuck(true));
 
   scheduleDuck();
 </script>
