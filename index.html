@@ -109,13 +109,30 @@
     animation: waddle 0.3s ease-in-out infinite;
   }
 
-  .duck.running {
-    animation: waddle 0.12s ease-in-out infinite;
-  }
-
   @keyframes waddle {
     0%, 100% { transform: translateY(0) scaleX(var(--dir, 1)); }
     50% { transform: translateY(-4px) scaleX(var(--dir, 1)); }
+  }
+
+  .streak-milestone {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(4rem, 20vw, 10rem);
+    font-weight: 800;
+    color: var(--accent);
+    z-index: 20;
+    pointer-events: none;
+    animation: milestonePop 1s ease-out forwards;
+  }
+
+  @keyframes milestonePop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    30% { transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
   }
 </style>
 </head>
@@ -175,52 +192,82 @@
 
   update();
 
-  // Die Ente wandert ab und zu quer über den Bildschirm
+  // Die Ente wandert ab und zu quer über den Bildschirm.
+  // Jeder Klick auf die Ente kehrt ihre Laufrichtung um, sodass man sie
+  // theoretisch endlos im Bild halten kann, bevor sie einen Rand erreicht.
   const duck = document.getElementById('duck');
+  const DUCK_SPEED = 0.15; // px/ms
+  const DUCK_MARGIN = 60; // px außerhalb des Bildschirms, ab der sie "entkommen" ist
+
+  let duckX = 0;
+  let duckDir = 1;
+  let duckActive = false;
+  let lastTimestamp = null;
+  let clickStreak = 0;
 
   function randomEdgeY() {
     return Math.random() * (window.innerHeight - 60);
   }
 
-  let duckTimer = null;
+  function showMilestone(n) {
+    const el = document.createElement('div');
+    el.className = 'streak-milestone';
+    el.textContent = n;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
 
-  function walkDuck(fast = false) {
-    clearTimeout(duckTimer);
-    const wasWalking = duck.classList.contains('walking');
-    const goingRight = Math.random() > 0.5;
-    const startX = (fast && wasWalking) ? duck.getBoundingClientRect().left : (goingRight ? -60 : window.innerWidth + 60);
-    const endX = goingRight ? window.innerWidth + 60 : -60;
-    const duration = fast ? (1000 + Math.random() * 800) : (6000 + Math.random() * 6000);
-
-    duck.style.setProperty('--dir', goingRight ? 1 : -1);
-    if (!fast || !wasWalking) {
-      duck.style.bottom = randomEdgeY() + 'px';
+  function registerClick() {
+    if (!duckActive) return;
+    duckDir *= -1;
+    clickStreak++;
+    if (clickStreak >= 20 && (clickStreak - 20) % 10 === 0) {
+      showMilestone(clickStreak);
     }
-    duck.style.transition = 'none';
-    duck.style.left = startX + 'px';
+  }
+
+  function escapeDuck() {
+    duckActive = false;
+    duck.classList.remove('walking');
+    clickStreak = 0;
+    scheduleDuck();
+  }
+
+  function tick(timestamp) {
+    if (!duckActive) return;
+    const dt = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    duckX += duckDir * DUCK_SPEED * dt;
+    duck.style.left = duckX + 'px';
+    duck.style.setProperty('--dir', duckDir);
+
+    if (duckX < -DUCK_MARGIN || duckX > window.innerWidth + DUCK_MARGIN) {
+      escapeDuck();
+      return;
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  function startWalk() {
+    duckDir = Math.random() > 0.5 ? 1 : -1;
+    duckX = duckDir === 1 ? -DUCK_MARGIN : window.innerWidth + DUCK_MARGIN;
+    duck.style.bottom = randomEdgeY() + 'px';
+    duck.style.left = duckX + 'px';
+    duck.style.setProperty('--dir', duckDir);
     duck.classList.add('walking');
-    duck.classList.toggle('running', fast);
-
-    // im nächsten Frame die eigentliche Bewegung starten, damit die Transition greift
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        duck.style.transition = `left ${duration}ms linear`;
-        duck.style.left = endX + 'px';
-      });
-    });
-
-    duckTimer = setTimeout(() => {
-      duck.classList.remove('walking', 'running');
-      scheduleDuck();
-    }, duration);
+    duckActive = true;
+    lastTimestamp = performance.now();
+    requestAnimationFrame(tick);
   }
 
   function scheduleDuck() {
     const delay = Math.random() * 10000;
-    duckTimer = setTimeout(() => walkDuck(false), delay);
+    setTimeout(startWalk, delay);
   }
 
-  duck.addEventListener('click', () => walkDuck(true));
+  duck.addEventListener('click', registerClick);
 
   scheduleDuck();
 </script>
