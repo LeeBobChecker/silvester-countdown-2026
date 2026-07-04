@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23302b63'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%F0%9F%A6%86%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Countdown bis 31.12.2026</title>
 <style>
   :root {
@@ -225,7 +225,7 @@
     duckDir *= -1;
     duckSpeed = Math.min(DUCK_MAX_SPEED, duckSpeed + DUCK_SPEED_STEP);
     clickStreak++;
-    if (clickStreak >= 20 && (clickStreak - 20) % 10 === 0) {
+    if (clickStreak >= 5 && (clickStreak - 5) % 10 === 0) {
       showMilestone(clickStreak);
     }
   }
