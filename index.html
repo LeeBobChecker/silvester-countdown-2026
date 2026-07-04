@@ -97,7 +97,7 @@
     position: fixed;
     bottom: 0;
     left: 0;
-    font-size: 2rem;
+    font-size: 3.5rem;
     z-index: 10;
     user-select: none;
     cursor: pointer;
@@ -196,11 +196,14 @@
   // Jeder Klick auf die Ente kehrt ihre Laufrichtung um, sodass man sie
   // theoretisch endlos im Bild halten kann, bevor sie einen Rand erreicht.
   const duck = document.getElementById('duck');
-  const DUCK_SPEED = 0.15; // px/ms
-  const DUCK_MARGIN = 60; // px außerhalb des Bildschirms, ab der sie "entkommen" ist
+  const DUCK_BASE_SPEED = 0.15; // px/ms
+  const DUCK_SPEED_STEP = 0.01; // Geschwindigkeitszuwachs pro Klick
+  const DUCK_MAX_SPEED = 0.6; // Deckel, damit sie nicht unspielbar schnell wird
+  const DUCK_MARGIN = 100; // px außerhalb des Bildschirms, ab der sie "entkommen" ist
 
   let duckX = 0;
   let duckDir = 1;
+  let duckSpeed = DUCK_BASE_SPEED;
   let duckActive = false;
   let lastTimestamp = null;
   let clickStreak = 0;
@@ -220,6 +223,7 @@
   function registerClick() {
     if (!duckActive) return;
     duckDir *= -1;
+    duckSpeed = Math.min(DUCK_MAX_SPEED, duckSpeed + DUCK_SPEED_STEP);
     clickStreak++;
     if (clickStreak >= 20 && (clickStreak - 20) % 10 === 0) {
       showMilestone(clickStreak);
@@ -238,7 +242,7 @@
     const dt = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    duckX += duckDir * DUCK_SPEED * dt;
+    duckX += duckDir * duckSpeed * dt;
     duck.style.left = duckX + 'px';
     duck.style.setProperty('--dir', duckDir);
 
@@ -251,6 +255,7 @@
   }
 
   function startWalk() {
+    duckSpeed = DUCK_BASE_SPEED;
     duckDir = Math.random() > 0.5 ? 1 : -1;
     duckX = duckDir === 1 ? -DUCK_MARGIN : window.innerWidth + DUCK_MARGIN;
     duck.style.bottom = randomEdgeY() + 'px';
