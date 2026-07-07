@@ -7,13 +7,17 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <title>Countdown bis 31.12.2026</title>
 <style>
   :root {
-    --bg-1: #0f0c29;
-    --bg-2: #302b63;
-    --bg-3: #24243e;
-    --accent: #ffcc70;
+    --bg-1: #0a0e27;
+    --bg-2: #1a1440;
+    --bg-3: #2d1b4e;
+    --accent: #f5b942;
+    --accent-glow: rgba(245, 185, 66, 0.35);
     --text: #f5f5f7;
   }
 
@@ -24,7 +28,7 @@
   }
 
   body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
     background: linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));
     background-size: 400% 400%;
     animation: gradientShift 18s ease infinite;
@@ -45,7 +49,34 @@
     100% { background-position: 0% 50%; }
   }
 
+  .stars {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle ease-in-out infinite;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.9; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body { animation: none; }
+    .star { animation: none; opacity: 0.5; }
+  }
+
   .countdown {
+    position: relative;
+    z-index: 1;
     display: flex;
     gap: clamp(10px, 3vw, 30px);
     flex-wrap: wrap;
@@ -56,15 +87,17 @@
     background: rgba(255, 255, 255, 0.06);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid var(--accent-glow);
     border-radius: 16px;
     padding: clamp(16px, 3vw, 30px) clamp(14px, 3vw, 26px);
     min-width: clamp(80px, 18vw, 140px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 0 24px -12px var(--accent-glow);
   }
 
   .unit .value {
+    font-family: 'Fredoka', 'Nunito', sans-serif;
     font-size: clamp(2.2rem, 8vw, 4.5rem);
-    font-weight: 700;
+    font-weight: 600;
     color: var(--accent);
     font-variant-numeric: tabular-nums;
     line-height: 1;
@@ -114,14 +147,33 @@
     50% { transform: translateY(-4px) scaleX(var(--dir, 1)); }
   }
 
+  .highscore {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(0.8rem, 2vw, 1rem);
+    letter-spacing: 1px;
+    color: var(--text);
+    opacity: 0.75;
+    z-index: 5;
+  }
+
+  .highscore .value {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
   .streak-milestone {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    font-family: 'Fredoka', 'Nunito', sans-serif;
     font-size: clamp(4rem, 20vw, 10rem);
-    font-weight: 800;
+    font-weight: 700;
     color: var(--accent);
+    text-shadow: 0 0 40px var(--accent-glow);
     z-index: 20;
     pointer-events: none;
     animation: milestonePop 1s ease-out forwards;
@@ -138,6 +190,8 @@
 </head>
 <body>
 
+  <div class="stars" id="stars"></div>
+
   <div id="countdown" class="countdown">
     <div class="unit"><div class="value" id="days">--</div><div class="label">Tage</div></div>
     <div class="unit"><div class="value" id="hours">--</div><div class="label">Stunden</div></div>
@@ -148,7 +202,25 @@
 
   <div class="duck" id="duck">🦆</div>
 
+  <div class="highscore">🏆 Dein Erpel-Highscore: <span class="value" id="highscoreValue">0</span></div>
+
 <script>
+  // Funkelnder Sternenhimmel im Hintergrund
+  const starsEl = document.getElementById('stars');
+  const STAR_COUNT = 60;
+  for (let i = 0; i < STAR_COUNT; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = 1 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.animationDuration = (2 + Math.random() * 4) + 's';
+    star.style.animationDelay = (Math.random() * 4) + 's';
+    starsEl.appendChild(star);
+  }
+
   const targetDate = new Date('2026-12-31T00:00:00');
   const countdownEl = document.getElementById('countdown');
   const daysEl = document.getElementById('days');
@@ -208,6 +280,17 @@
   let lastTimestamp = null;
   let clickStreak = 0;
 
+  const highscoreValueEl = document.getElementById('highscoreValue');
+  let highscore = parseInt(localStorage.getItem('erpelHighscore'), 10) || 0;
+  highscoreValueEl.textContent = highscore;
+
+  function registerHighscore() {
+    if (clickStreak <= highscore) return;
+    highscore = clickStreak;
+    highscoreValueEl.textContent = highscore;
+    localStorage.setItem('erpelHighscore', highscore);
+  }
+
   function randomEdgeY() {
     return Math.random() * (window.innerHeight - 60);
   }
@@ -225,6 +308,7 @@
     duckDir *= -1;
     duckSpeed = Math.min(DUCK_MAX_SPEED, duckSpeed + DUCK_SPEED_STEP);
     clickStreak++;
+    registerHighscore();
     if (clickStreak >= 5 && (clickStreak - 5) % 10 === 0) {
       showMilestone(clickStreak);
     }
