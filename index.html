@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0e27" id="themeColor">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,9 +51,12 @@
     -webkit-touch-callout: none;
   }
 
-  /* Deckt Safe-Area-Bereiche (z.B. unter dem Home-Indikator) in Himmelsfarbe ab */
+  /* Deckt Safe-Area-Bereiche (z.B. unter dem Home-Indikator) in Himmelsfarbe ab.
+     Solide Grundfarbe als Fallback, falls der Verlauf nicht bis in die
+     Overscroll-/Safe-Area-Zonen gerendert wird. */
   html {
-    background: linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));
+    background-color: var(--bg-3);
+    background-image: linear-gradient(135deg, var(--bg-1), var(--bg-2), var(--bg-3));
   }
 
   body {
@@ -206,6 +210,15 @@
   .highscore .value {
     color: var(--accent);
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .highscore-current {
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 0.85em;
+    opacity: 0.8;
   }
 
   .streak-milestone {
@@ -246,7 +259,10 @@
 
   <div class="duck" id="duck">🦆</div>
 
-  <div class="highscore">🏆 Dein Erpel-Highscore: <span class="value" id="highscoreValue">0</span></div>
+  <div class="highscore">
+    <div class="highscore-best">🏆 Dein Erpel-Highscore: <span class="value" id="highscoreValue">0</span></div>
+    <div class="highscore-current">Aktueller Lauf: <span class="value" id="currentScoreValue">0</span></div>
+  </div>
 
 <script>
   // Scrollen und Zoomen komplett blockieren (reine Spielfläche).
@@ -258,6 +274,13 @@
   document.addEventListener('dblclick', (e) => e.preventDefault());
 
   // Hintergrund passt sich der aktuellen Tageszeit an
+  const THEME_COLORS = {
+    'tod-dawn': '#1b1035',
+    'tod-day': '#3d7dd6',
+    'tod-dusk': '#1a1440',
+    'tod-night': '#0a0e27'
+  };
+
   function applyTimeOfDay() {
     const hour = new Date().getHours();
     let band;
@@ -268,6 +291,7 @@
 
     document.documentElement.classList.remove('tod-dawn', 'tod-day', 'tod-dusk', 'tod-night');
     document.documentElement.classList.add(band);
+    document.getElementById('themeColor').content = THEME_COLORS[band];
   }
 
   applyTimeOfDay();
@@ -349,6 +373,7 @@
   let clickStreak = 0;
 
   const highscoreValueEl = document.getElementById('highscoreValue');
+  const currentScoreValueEl = document.getElementById('currentScoreValue');
   let highscore = parseInt(localStorage.getItem('erpelHighscore'), 10) || 0;
   highscoreValueEl.textContent = highscore;
 
@@ -376,6 +401,7 @@
     duckDir *= -1;
     duckSpeed = Math.min(DUCK_MAX_SPEED, duckSpeed + DUCK_SPEED_STEP);
     clickStreak++;
+    currentScoreValueEl.textContent = clickStreak;
     registerHighscore();
     if (clickStreak >= 5 && (clickStreak - 5) % 10 === 0) {
       showMilestone(clickStreak);
@@ -386,6 +412,7 @@
     duckActive = false;
     duck.classList.remove('walking');
     clickStreak = 0;
+    currentScoreValueEl.textContent = 0;
     scheduleDuck();
   }
 
