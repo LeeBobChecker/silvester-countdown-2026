@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -43,7 +43,17 @@
 
   html, body {
     height: 100%;
-    touch-action: manipulation;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
   }
 
   body {
@@ -234,6 +244,14 @@
   <div class="highscore">🏆 Dein Erpel-Highscore: <span class="value" id="highscoreValue">0</span></div>
 
 <script>
+  // Scrollen und Zoomen komplett blockieren (reine Spielfläche).
+  // Die Ente reagiert auf pointerdown, daher darf touchend abgefangen werden,
+  // ohne dass Taps verloren gehen.
+  document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  document.addEventListener('dblclick', (e) => e.preventDefault());
+
   // Hintergrund passt sich der aktuellen Tageszeit an
   function applyTimeOfDay() {
     const hour = new Date().getHours();
@@ -401,7 +419,10 @@
     setTimeout(startWalk, delay);
   }
 
-  duck.addEventListener('click', registerClick);
+  duck.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    registerClick();
+  });
 
   scheduleDuck();
 </script>
